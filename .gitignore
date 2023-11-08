@@ -1,0 +1,43 @@
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+
+# Executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go specific
+# Binary output from the go coverage tool
+*.out
+
+# Testing
+*.test
+
+# GoLand IDE files
+.idea/
+
+# Output directories
+/build
+
+# macOS directory attributes
+.DS_Store
+
+# JetBrains specific directories
+.idea/
+*.iml
+*.iws
+*.ipr
+/.settings/
+/.idea_modules/
+*.db
+*.sqlite
+
+# Ignore vendor folder if it's managed by Go modules (Go 1.11+)
+/vendor/
+
+# Ignore temporary files
+*~
