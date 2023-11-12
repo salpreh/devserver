@@ -10,7 +10,7 @@ const defaultPort = 9000
 func CreateEchoCmd() *cobra.Command {
 	var port int
 	var echoCmd = &cobra.Command{
-		Use:   "",
+		Use:   "echo",
 		Short: "Start echo server",
 		Run: func(cmd *cobra.Command, args []string) {
 			server.CreateEchoServer(port)

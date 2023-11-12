@@ -1,10 +1,22 @@
 package main
 
-func main() {
-	mainCmd := CreateEchoCmd()
+import "github.com/spf13/cobra"
 
-	e := mainCmd.Execute()
+func main() {
+	rootCmd := createRootCmd()
+	rootCmd.AddCommand(CreateEchoCmd(), CreateMockCmd())
+
+	e := rootCmd.Execute()
 	if e != nil {
 		panic(e)
+	}
+}
+
+func createRootCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "devserver",
+		Short: "Devserver cli",
+		Long:  "Devserver allows you to create echo and mock server for development",
+		Run:   func(cmd *cobra.Command, args []string) {},
 	}
 }
