@@ -1,15 +1,11 @@
 package server
 
 import (
+	"com.github/salpreh/devserver/pkg/servers"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"strconv"
-)
-
-const (
-	responseCodeHeader string = "X-Response-Code"
 )
 
 const (
@@ -18,12 +14,12 @@ const (
 	requestPathHeader          = requestHeaderPrefix + "Path"
 )
 
-const defaultStatusCode int = 200
+const defaultStatusCode int = http.StatusOK
 
 func CreateEchoServer(port int) {
-	log.Printf("Starting server on port: %d", port)
-
 	http.HandleFunc("/", echoHandler)
+
+	log.Printf("Starting server on port: %d", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		log.Panicf("Unable to start server on port %d: %v", port, err)
@@ -33,7 +29,7 @@ func CreateEchoServer(port int) {
 func echoHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received request: [%s] %s", r.Method, r.URL.Path)
 
-	resStatusCode := getResponseCode(r)
+	resStatusCode := servercommons.GetResponseCode(r, defaultStatusCode)
 
 	for key, values := range r.Header {
 		headerKey := requestHeaderPrefix + key
@@ -57,18 +53,6 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error writing response body: %v\n", err)
 	}
-}
-
-func getResponseCode(r *http.Request) int {
-	resStatusCode := defaultStatusCode
-
-	clientStatusCode := r.Header.Get(responseCodeHeader)
-	r.Header.Del(responseCodeHeader)
-	if clientStatusCode != "" {
-		resStatusCode, _ = strconv.Atoi(clientStatusCode)
-	}
-
-	return resStatusCode
 }
 
 func getAdditionalHeaders(r *http.Request) map[string]string {
