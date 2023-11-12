@@ -27,7 +27,6 @@
 .DS_Store
 
 # JetBrains specific directories
-.idea/
 *.iml
 *.iws
 *.ipr
@@ -41,3 +40,7 @@
 
 # Ignore temporary files
 *~
+
+# Project files
+.doc
+.bin
