@@ -1,8 +1,7 @@
-package server
+package servercommons
 
 import (
 	"bytes"
-	servercommons "com.github/salpreh/devserver/pkg/servers"
 	collectionutils "com.github/salpreh/devserver/pkg/utils"
 	"encoding/json"
 	"fmt"
@@ -60,7 +59,7 @@ func generateHandler(path HttpPath, pathConfig Path, commonHeaders map[string]st
 		for k, v := range headers {
 			w.Header().Add(k, v)
 		}
-		returnStatusCode := servercommons.GetResponseCode(r, defaultStatusCode)
+		returnStatusCode := GetResponseCode(r, defaultStatusCode)
 		w.WriteHeader(returnStatusCode)
 
 		response, hasValue := pathConfig.GetResponseByCode(returnStatusCode)

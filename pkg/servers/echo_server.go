@@ -1,7 +1,6 @@
-package server
+package servercommons
 
 import (
-	"com.github/salpreh/devserver/pkg/servers"
 	"fmt"
 	"io"
 	"log"
@@ -29,7 +28,7 @@ func CreateEchoServer(port int) {
 func echoHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received request: [%s] %s", r.Method, r.URL.Path)
 
-	resStatusCode := servercommons.GetResponseCode(r, defaultStatusCode)
+	resStatusCode := GetResponseCode(r, defaultStatusCode)
 
 	for key, values := range r.Header {
 		headerKey := requestHeaderPrefix + key

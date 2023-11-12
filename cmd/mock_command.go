@@ -1,7 +1,7 @@
 package main
 
 import (
-	server "com.github/salpreh/devserver/pkg"
+	server "com.github/salpreh/devserver/pkg/servers"
 	"github.com/spf13/cobra"
 )
 
