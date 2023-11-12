@@ -8,7 +8,7 @@ Currently, there are 2 main commands: `echo` and `mock` (use `--help` flag for m
 
 ### Mock server
 The file format for the mock server
-```json
+```json lines
 {
   "headers": { // Common headers
     "content-type": "application/json",
