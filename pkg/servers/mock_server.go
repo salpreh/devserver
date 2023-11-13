@@ -11,6 +11,11 @@ import (
 )
 
 const defaultResponseCode int = http.StatusOK
+const defaultResponseMethod string = "get"
+const (
+	responsesConfigKey string = "responses"
+	headersConfigKey   string = "headers"
+)
 
 func CreateMockServer(port int, mockConfigFile string) {
 	config := parseConfigFile(mockConfigFile)
@@ -35,13 +40,13 @@ func parseConfigFile(configFile string) *MockConfig {
 	}
 	log.Printf("Config file readed")
 
-	var config MockConfig
+	var config ImportedMockConfig
 	e = json.Unmarshal(fileContent, &config)
 	if e != nil {
 		log.Panicf("Unable to parse config file %v", e)
 	}
 
-	return &config
+	return config.LoadConfig()
 }
 
 func generateHandlers(config *MockConfig) map[HttpPath]func(http.ResponseWriter, *http.Request) {
@@ -82,6 +87,57 @@ func generateHandler(path HttpPath, pathConfig Path, commonHeaders map[string]st
 
 type HttpPath string
 
+type ImportedMockConfig struct {
+	Headers map[string]string
+	Paths   map[HttpPath]map[string]json.RawMessage
+}
+
+func (c *ImportedMockConfig) LoadConfig() *MockConfig {
+	paths := make(map[HttpPath]Path)
+	for path, data := range c.Paths {
+		rawHeaders := data[headersConfigKey]
+		var headers map[string]string
+		if rawHeaders != nil {
+			if err := json.Unmarshal(rawHeaders, &headers); err != nil {
+				log.Panicf("Unable to process headers for path %s in config: %v", path, err)
+			}
+		}
+
+		rawResponses, exists := data[responsesConfigKey]
+		if exists { // If responses keyword exists we build path with common responses
+			var responses Responses
+			if err := json.Unmarshal(rawResponses, &responses); err != nil {
+				log.Panicf("Unable to process common responses for path %s in config: %v", path, err)
+			}
+			paths[path] = Path{
+				headers,
+				responses,
+				nil,
+			}
+		} else { // Otherwise build path with per method responses
+			delete(data, headersConfigKey)
+			methods := make(map[string]Responses)
+			for method, rawResponses := range data {
+				var responses map[string]Responses
+				if err := json.Unmarshal(rawResponses, &responses); err != nil {
+					log.Panicf("Unable to process responses for path %s, method %s: %v", path, method, err)
+				}
+				methods[method] = responses[responsesConfigKey]
+			}
+			paths[path] = Path{
+				headers,
+				nil,
+				methods,
+			}
+		}
+	}
+
+	return &MockConfig{
+		c.Headers,
+		paths,
+	}
+}
+
 type MockConfig struct {
 	Headers map[string]string
 	Paths   map[HttpPath]Path
@@ -89,11 +145,13 @@ type MockConfig struct {
 
 type Path struct {
 	Headers   map[string]string
-	Responses map[int]json.RawMessage
+	Responses Responses
+	Methods   map[string]Responses
 }
 
 func (p *Path) GetResponseByCode(statusCode int) (json.RawMessage, bool) {
 	res, exists := p.Responses[statusCode]
+type Responses map[int]json.RawMessage
 	return res, exists
 }
 
