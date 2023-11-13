@@ -163,21 +163,6 @@ type Path struct {
 	Methods   map[string]Responses
 }
 
-type Responses map[int]json.RawMessage
-
-func (rs *Responses) getDefaultResponse() (int, json.RawMessage) {
-	code := defaultStatusCode
-	res, exists := (*rs)[defaultResponseCode]
-	if !exists {
-		for c, r := range *rs {
-			code, res = c, r
-			break
-		}
-	}
-
-	return code, res
-}
-
 func (p *Path) HasPerMethodResponses() bool {
 	return p.Methods != nil
 }
@@ -224,4 +209,19 @@ func (p *Path) GetAnyAvailableResponses() Responses {
 	}
 
 	return responses
+}
+
+type Responses map[int]json.RawMessage
+
+func (rs *Responses) getDefaultResponse() (int, json.RawMessage) {
+	code := defaultStatusCode
+	res, exists := (*rs)[defaultResponseCode]
+	if !exists {
+		for c, r := range *rs {
+			code, res = c, r
+			break
+		}
+	}
+
+	return code, res
 }
