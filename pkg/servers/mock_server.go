@@ -12,8 +12,11 @@ import (
 )
 
 const defaultResponseCode int = http.StatusOK
-const noResponseCode int = -1
 const defaultResponseMethod string = "get"
+
+const noResponseCode int = -1
+const noBodyMarker string = "null"
+
 const (
 	responsesConfigKey string = "responses"
 	headersConfigKey   string = "headers"
@@ -75,13 +78,14 @@ func generateHandler(path HttpPath, pathConfig Path, commonHeaders map[string]st
 			log.Printf("Using %d response as default for hadler %s", code, path)
 		}
 
-		var prettyResponse bytes.Buffer
-		json.Indent(&prettyResponse, response, "", "\t")
-		_, err := w.Write(prettyResponse.Bytes())
 		if returnStatusCode == noResponseCode {
 			returnStatusCode = code
 		}
 		w.WriteHeader(returnStatusCode)
+
+		if string(response) == noBodyMarker {
+			return
+		}
 
 		var minifiedResponse bytes.Buffer
 		json.Compact(&minifiedResponse, response)
