@@ -34,6 +34,25 @@ The file format for the mock server
       "responses": {
         "200": "World!"
       }
+    },
+    "/hello/name": {
+      "get": { // Per method responses
+        "responses": {
+          "200": {
+            "content": "Hi there!",
+            "name": "name"
+          },
+          "400": {
+            "code": "ER01",
+            "message": "El que?"
+          }
+        }
+      },
+      "post": {
+        "responses": {
+          "204": null // No body content
+        }
+      }
     }
   }
 }
