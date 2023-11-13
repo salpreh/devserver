@@ -8,9 +8,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 const defaultResponseCode int = http.StatusOK
+const noResponseCode int = -1
 const defaultResponseMethod string = "get"
 const (
 	responsesConfigKey string = "responses"
@@ -64,11 +66,10 @@ func generateHandler(path HttpPath, pathConfig Path, commonHeaders map[string]st
 		for k, v := range headers {
 			w.Header().Add(k, v)
 		}
-		returnStatusCode := GetResponseCode(r, defaultStatusCode)
-		w.WriteHeader(returnStatusCode)
 
-		response, hasValue := pathConfig.GetResponseByCode(returnStatusCode)
-		if !hasValue {
+		returnStatusCode := GetResponseCode(r, noResponseCode)
+		code, response := pathConfig.GetResponse(strings.ToLower(r.Method), returnStatusCode)
+		if response == nil {
 			var code int
 			code, response = pathConfig.GetDefaultResponse()
 			log.Printf("Using %d response as default for hadler %s", code, path)
@@ -77,6 +78,15 @@ func generateHandler(path HttpPath, pathConfig Path, commonHeaders map[string]st
 		var prettyResponse bytes.Buffer
 		json.Indent(&prettyResponse, response, "", "\t")
 		_, err := w.Write(prettyResponse.Bytes())
+		if returnStatusCode == noResponseCode {
+			returnStatusCode = code
+		}
+		w.WriteHeader(returnStatusCode)
+
+		var minifiedResponse bytes.Buffer
+		json.Compact(&minifiedResponse, response)
+
+		_, err := w.Write(minifiedResponse.Bytes())
 		if err != nil {
 			log.Panicf("Unable to generate handler for path %s: %v", path, err)
 		}
@@ -149,24 +159,65 @@ type Path struct {
 	Methods   map[string]Responses
 }
 
-func (p *Path) GetResponseByCode(statusCode int) (json.RawMessage, bool) {
-	res, exists := p.Responses[statusCode]
 type Responses map[int]json.RawMessage
-	return res, exists
-}
 
-func (p *Path) GetDefaultResponse() (int, json.RawMessage) {
-	if p.Responses == nil || len(p.Responses) == 0 {
-		return defaultStatusCode, nil
-	}
-
+func (rs *Responses) getDefaultResponse() (int, json.RawMessage) {
 	code := defaultStatusCode
-	res, exists := p.Responses[defaultResponseCode]
+	res, exists := (*rs)[defaultResponseCode]
 	if !exists {
-		for c, r := range p.Responses {
+		for c, r := range *rs {
 			code, res = c, r
+			break
 		}
 	}
 
 	return code, res
+}
+
+func (p *Path) HasPerMethodResponses() bool {
+	return p.Methods != nil
+}
+
+func (p *Path) GetResponse(httpMethod string, statusCode int) (int, json.RawMessage) {
+	code := statusCode
+	responses := p.GetAvailableResponses(httpMethod)
+	res, exists := responses[statusCode]
+	if !exists {
+		code, res = responses.getDefaultResponse()
+		exists = res != nil
+	}
+
+	return code, res
+}
+
+func (p *Path) GetDefaultResponse() (int, json.RawMessage) {
+	responses := p.GetAnyAvailableResponses()
+	if responses == nil || len(responses) == 0 {
+		return defaultStatusCode, nil
+	}
+
+	return responses.getDefaultResponse()
+}
+
+func (p *Path) GetAvailableResponses(httpMethod string) Responses {
+	responses := p.Responses
+	if p.HasPerMethodResponses() {
+		responses = p.Methods[httpMethod]
+	}
+
+	return responses
+}
+
+func (p *Path) GetAnyAvailableResponses() Responses {
+	if !p.HasPerMethodResponses() {
+		return p.Responses
+	}
+
+	responses := p.Methods[defaultResponseMethod]
+	for _, res := range p.Methods {
+		responses = res
+		break
+	}
+
+	return responses
 }
