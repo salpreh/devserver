@@ -1,4 +1,4 @@
-package servercommons
+package server
 
 import (
 	"fmt"
