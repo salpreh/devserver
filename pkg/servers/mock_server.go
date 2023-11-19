@@ -11,16 +11,8 @@ import (
 	"strings"
 )
 
-const defaultResponseCode int = http.StatusOK
-const defaultResponseMethod string = "get"
-
 const noResponseCode int = -1
 const noBodyMarker string = "null"
-
-const (
-	responsesConfigKey string = "responses"
-	headersConfigKey   string = "headers"
-)
 
 func CreateMockServer(port int, mockConfigFile string) {
 	config := parseConfigFile(mockConfigFile)
@@ -97,55 +89,4 @@ func generateHandler(path HttpPath, pathConfig Path, commonHeaders map[string]st
 	}
 
 	return handler
-}
-
-type ImportedMockConfig struct {
-	Headers map[string]string
-	Paths   map[HttpPath]map[string]json.RawMessage
-}
-
-func (c *ImportedMockConfig) LoadConfig() *MockConfig {
-	paths := make(map[HttpPath]Path)
-	for path, data := range c.Paths {
-		rawHeaders := data[headersConfigKey]
-		var headers map[string]string
-		if rawHeaders != nil {
-			if err := json.Unmarshal(rawHeaders, &headers); err != nil {
-				log.Panicf("Unable to process headers for path %s in config: %v", path, err)
-			}
-		}
-
-		rawResponses, exists := data[responsesConfigKey]
-		if exists { // If responses keyword exists we build path with common responses
-			var responses Responses
-			if err := json.Unmarshal(rawResponses, &responses); err != nil {
-				log.Panicf("Unable to process common responses for path %s in config: %v", path, err)
-			}
-			paths[path] = Path{
-				headers,
-				responses,
-				nil,
-			}
-		} else { // Otherwise build path with per method responses
-			delete(data, headersConfigKey)
-			methods := make(map[string]Responses)
-			for method, rawResponses := range data {
-				var responses map[string]Responses
-				if err := json.Unmarshal(rawResponses, &responses); err != nil {
-					log.Panicf("Unable to process responses for path %s, method %s: %v", path, method, err)
-				}
-				methods[method] = responses[responsesConfigKey]
-			}
-			paths[path] = Path{
-				headers,
-				nil,
-				methods,
-			}
-		}
-	}
-
-	return &MockConfig{
-		c.Headers,
-		paths,
-	}
 }
