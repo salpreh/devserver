@@ -1,10 +1,12 @@
 package main
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+)
 
 func main() {
 	rootCmd := createRootCmd()
-	rootCmd.AddCommand(CreateEchoCmd(), CreateMockCmd())
+	rootCmd.AddCommand(CreateEchoCmd(), CreateMockCmd(), CreateContractCmd())
 
 	e := rootCmd.Execute()
 	if e != nil {

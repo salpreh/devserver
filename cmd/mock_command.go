@@ -8,7 +8,7 @@ import (
 func CreateMockCmd() *cobra.Command {
 	var port int
 	mockCmd := &cobra.Command{
-		Use:   "mock",
+		Use:   "mock [configPath]",
 		Short: "Start a mock server",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
