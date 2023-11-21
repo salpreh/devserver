@@ -1,0 +1,47 @@
+{
+  "headers": {
+    "content-type": "application/json",
+    "x-origin": "Mockserver"
+  },
+  "paths": {
+    "/hello/boy": {
+      "responses": {
+        "200": {
+          "content": "Hi there!",
+          "name": "boy"
+        },
+        "500": {
+          "code": "ER01",
+          "message": "Are you doing?"
+        }
+      }
+    },
+    "/hello": {
+      "headers": {
+        "content-type": "text/plain"
+      },
+      "responses": {
+        "200": "World!"
+      }
+    },
+    "/hello/name": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": "Hi there!",
+            "name": "name"
+          },
+          "400": {
+            "code": "ER01",
+            "message": "What?"
+          }
+        }
+      },
+      "post": {
+        "responses": {
+          "204": null
+        }
+      }
+    }
+  }
+}
