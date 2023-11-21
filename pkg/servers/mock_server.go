@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"com.github/salpreh/devserver/pkg/servers/contracts"
 	collectionutils "com.github/salpreh/devserver/pkg/utils"
 	"encoding/json"
 	"fmt"
@@ -12,10 +13,21 @@ import (
 )
 
 const noResponseCode int = -1
-const noBodyMarker string = "null"
+
+func CreateMockServerWithContract(port int, contractFile string, mockConfigFile string) {
+	contractConfig := contracts.LoadContractMockConfig(contractFile)
+	mockConfig := parseConfigFile(mockConfigFile)
+	contractConfig.MergeConfig(mockConfig)
+
+	createMockServer(port, contractConfig)
+}
 
 func CreateMockServer(port int, mockConfigFile string) {
 	config := parseConfigFile(mockConfigFile)
+	createMockServer(port, config)
+}
+
+func createMockServer(port int, config *MockConfig) {
 	handlers := generateHandlers(config)
 
 	for path, handler := range handlers {

@@ -1,6 +1,7 @@
 package server
 
 import (
+	collectionutils "com.github/salpreh/devserver/pkg/utils"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,6 +11,8 @@ import (
 
 const defaultResponseCode int = http.StatusOK
 const defaultResponseMethod string = "get"
+
+const noBodyMarker string = "null"
 
 const (
 	responsesConfigKey string = "responses"
@@ -112,10 +115,47 @@ type MockConfig struct {
 	Paths   map[HttpPath]Path
 }
 
+// MergeConfig Merges current config with an extra one.
+// In case of data collision (both have response definition for a path and given code) extra config overrides.
+func (c *MockConfig) MergeConfig(extraConfig *MockConfig) {
+	mergeHeaders(extraConfig.Headers, c.Headers)
+	for path, pathData := range extraConfig.Paths {
+		c.mergePath(path, &pathData)
+	}
+}
+
+func mergeHeaders(srcHeaders map[string]string, dstHeaders map[string]string) {
+	for header, value := range srcHeaders {
+		dstHeaders[header] = value
+	}
+}
+
+func (c *MockConfig) mergePath(pathRoute HttpPath, extraPath *Path) {
+	thisPath, exists := c.Paths[pathRoute]
+	if !exists {
+		c.Paths[pathRoute] = *extraPath
+	}
+
+	mergeHeaders(extraPath.Headers, thisPath.Headers)
+	mergeResponses(extraPath.Responses, thisPath.Responses)
+	for code, thisResponses := range thisPath.Methods {
+		extraResponses, exists := extraPath.Methods[code]
+		if exists {
+			mergeResponses(extraResponses, thisResponses)
+		}
+	}
+}
+
 type Path struct {
 	Headers   map[string]string
 	Responses Responses
 	Methods   map[string]Responses
+}
+
+func mergeResponses(srcResponses Responses, dstResponses Responses) {
+	for code, res := range srcResponses {
+		dstResponses[code] = res
+	}
 }
 
 func (p *Path) HasPerMethodResponses() bool {
@@ -166,13 +206,24 @@ func (p *Path) GetAnyAvailableResponses() Responses {
 	return responses
 }
 
+func (p *Path) Clone() *Path {
+	headers := collectionutils.CloneMap(p.Headers)
+	commonResponses := collectionutils.CloneMap(p.Responses)
+	methods := make(map[string]Responses)
+	for status, response := range p.Methods {
+		methods[status] = collectionutils.CloneMap(response)
+	}
+
+	return &Path{headers, commonResponses, methods}
+}
+
 type Responses map[int]json.RawMessage
 
 func (rs *Responses) ToJsonSerializable() map[string]json.RawMessage {
 	serializable := make(map[string]json.RawMessage)
 	for code, res := range *rs {
 		if len(res) == 0 {
-			res = []byte("{}")
+			res = []byte(noBodyMarker)
 		}
 		serializable[strconv.Itoa(code)] = res
 	}

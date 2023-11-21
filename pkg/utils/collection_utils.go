@@ -17,3 +17,16 @@ func MergeMaps[K comparable, V any](map1 map[K]V, map2 map[K]V) map[K]V {
 
 	return mergeMap
 }
+
+func CloneMap[K comparable, V any](srcMap map[K]V) map[K]V {
+	if srcMap == nil {
+		return nil
+	}
+
+	newMap := make(map[K]V)
+	for k, v := range srcMap {
+		newMap[k] = v
+	}
+
+	return newMap
+}
